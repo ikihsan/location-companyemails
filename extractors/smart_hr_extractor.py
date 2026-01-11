@@ -225,12 +225,24 @@ class SmartHREmailExtractor:
         results = []
         for scored in scored_emails[:20]:  # Max 20 emails per page
             confidence = self._score_to_confidence(scored.score)
+            
+            # Check if domain matches company (extract domain from email)
+            try:
+                email_domain = scored.email.split('@')[1].lower()
+                domain_matches = any(
+                    keyword in email_domain 
+                    for keyword in ['tcs', 'wipro', 'infosys', 'hcl', 'tech', 'corp', 'india']
+                ) if source_url else True  # Default to True if no company context
+            except:
+                domain_matches = True
+            
             extracted = ExtractedEmail(
                 email=scored.email,
                 source_url=source_url,
                 confidence=confidence,
+                domain_matches_company=domain_matches,
                 is_hr_contact=scored.is_hr,
-                extraction_method=ExtractionMethod.MAILTO if 'mailto' in str(scored.reasons) else ExtractionMethod.REGEX,
+                extraction_method=ExtractionMethod.MAILTO_LINK if 'mailto' in str(scored.reasons) else ExtractionMethod.REGEX_PLAIN,
             )
             results.append(extracted)
         
